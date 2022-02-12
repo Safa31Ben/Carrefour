@@ -1,83 +1,25 @@
-import java.awt.EventQueue;
+import javax.swing.*;
+import javax.swing.border.LineBorder;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.Color;
-import javax.swing.JTextField;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Random;
-//import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import javax.swing.JButton;
 
-public class Carrfour {
+public class Carrfour implements ActionListener {
 
 	static JFrame frmCarrfour;
-	static JPanel feuV1_1;
-	static JPanel feuV1_2;
-	static JPanel feuV2_1;
-	static JPanel feuV2_2;
+	static SecondPage secondPage;
+	static FirstPage firstPage;
+	JButton btnStart;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				try {
-					new Carrfour();
-					Carrfour.frmCarrfour.setVisible(true);
-
-					Semaphore sfeu1r = new Semaphore(1, true), sfeu2r = new Semaphore(0, true),
-							sfeu1l = new Semaphore(1, true), sfeu2l = new Semaphore(0, true),
-							arrL = new Semaphore(1, true), arrR = new Semaphore(1, true);
-					int coordonneesVoie1[] = { -150, -60, 30, 120, 210, 300, 390, 480, 570, 845, 935, 1025, 1115, 1205,
-							1295, 1385 }, coordonneesVoie2[] = { -110, -20, 70, 160, 440, 530, 620, 710 };
-
-					String type[] = { "voiture", "bus" };
-
-					ArrayList<Semaphore> svoie1L = new ArrayList<Semaphore>();
-					ArrayList<Semaphore> svoie2L = new ArrayList<Semaphore>();
-					ArrayList<Semaphore> svoie1R = new ArrayList<Semaphore>();
-					ArrayList<Semaphore> svoie2R = new ArrayList<Semaphore>();
-
-					for (int i = 0; i < coordonneesVoie1.length; i++) {
-						svoie1L.add(new Semaphore(1, true));
-						svoie1R.add(new Semaphore(1, true));
-					}
-					for (int i = 0; i < coordonneesVoie2.length; i++) {
-						svoie2L.add(new Semaphore(1, true));
-						svoie2R.add(new Semaphore(1, true));
-					}
-
-					ChangementFeu ch = new ChangementFeu(sfeu1r, sfeu2r, sfeu1l, sfeu2l);
-					ch.start();
-
-					int nb_v1r = (new Random()).nextInt(20);
-					for (int i = 0; i < nb_v1r; i++) {
-						Voie1R v1r = new Voie1R(sfeu1r, svoie1R, coordonneesVoie1, type[(new Random()).nextInt(2)],
-								arrR);
-						v1r.start();
-					}
-					int nb_v1l = (new Random()).nextInt(20);
-					for (int i = 0; i < nb_v1l; i++) {
-						Voie1L v1l = new Voie1L(sfeu1l, svoie1L, coordonneesVoie1, type[(new Random()).nextInt(2)],
-								arrL);
-						v1l.start();
-					}
-					int nb_v2l = (new Random()).nextInt(20);
-					for (int i = 0; i < nb_v2l; i++) {
-						Voie2L v2l = new Voie2L(sfeu2l, svoie2L, coordonneesVoie2);
-						v2l.start();
-					}
-
-					int nb_v2r = (new Random()).nextInt(20);
-					for (int i = 0; i < nb_v2r; i++) {
-						Voie2R v2r = new Voie2R(sfeu2r, svoie2R, coordonneesVoie2);
-						v2r.start();
-					}
-
-				} catch (Exception e) {
-				}
+				new Carrfour();
 			}
 		});
 	}
@@ -86,79 +28,193 @@ public class Carrfour {
 		initialize();
 	}
 
+	JLayeredPane layeredPane;
+	CardLayout card;
+
 	private void initialize() {
 		frmCarrfour = new JFrame();
-		frmCarrfour.getContentPane().setBackground(Color.GRAY);
-		frmCarrfour.setTitle("Carrfour");
-		frmCarrfour.setBounds(0, 0, 1360, 730);
+		frmCarrfour.setResizable(false);
+		frmCarrfour.setSize(new Dimension(1360, 730));
 		frmCarrfour.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmCarrfour.getContentPane().setLayout(null);
 
-		JPanel panel = new JPanel();
-		panel.setBackground(Color.GREEN);
-		panel.setBounds(340, 0, 320, 250);
-		frmCarrfour.getContentPane().add(panel);
-		panel.setLayout(null);
+		layeredPane = new JLayeredPane();
+		layeredPane.setBounds(0, 0, 1360, 730);
+		frmCarrfour.getContentPane().add(layeredPane);
 
-		feuV2_1 = new JPanel();
-		feuV2_1.setBounds(295, 224, 15, 15);
-		panel.add(feuV2_1);
+		card = new CardLayout();
+		layeredPane.setLayout(card);
 
-		JPanel panel_1 = new JPanel();
-		panel_1.setBackground(Color.GREEN);
-		panel_1.setBounds(340, 440, 320, 250);
-		frmCarrfour.getContentPane().add(panel_1);
-		panel_1.setLayout(null);
+		firstPage = new FirstPage();
+		firstPage.setLayout(null);
 
-		feuV1_1 = new JPanel();
-		feuV1_1.setBounds(295, 11, 15, 15);
-		panel_1.add(feuV1_1);
+		btnStart = new JButton("Start");
+		btnStart.setFont(new Font("Inj Free", Font.ITALIC | Font.BOLD, 22));
+		btnStart.setBackground(Color.black);
+		btnStart.setForeground(new Color(220, 220, 220));
+		btnStart.setBorder(new LineBorder(Color.black, 2, true));
+		btnStart.setFocusPainted(false);
+		firstPage.add(btnStart);
+		btnStart.addActionListener(this);
+		btnStart.setBounds(595, 500, 150, 40);
 
-		JPanel panel_2 = new JPanel();
-		panel_2.setBackground(Color.GREEN);
-		panel_2.setBounds(845, 0, 500, 250);
-		frmCarrfour.getContentPane().add(panel_2);
-		panel_2.setLayout(null);
+		secondPage = new SecondPage();
+		secondPage.setLayout(null);
 
-		feuV1_2 = new JPanel();
-		feuV1_2.setBounds(10, 225, 15, 15);
-		panel_2.add(feuV1_2);
+		layeredPane.add(firstPage, "FirstPage");
+		layeredPane.add(secondPage, "Carrefour");
 
-		JPanel panel_3 = new JPanel();
-		panel_3.setBackground(Color.GREEN);
-		panel_3.setBounds(845, 440, 500, 250);
-		frmCarrfour.getContentPane().add(panel_3);
-		panel_3.setLayout(null);
+		JLabel p1 = new JLabel();
+		ImageIcon p1img = new ImageIcon(getClass().getResource("/p/2.png"));
+		Image p1im = p1img.getImage();
+		p1im = p1im.getScaledInstance(60, 40, java.awt.Image.SCALE_SMOOTH);
+		p1.setIcon(new ImageIcon(p1im));
+		secondPage.add(p1);
+		p1.setBounds(1045, 45, 60, 40);
 
-		feuV2_2 = new JPanel();
-		feuV2_2.setBounds(10, 11, 15, 15);
-		panel_3.add(feuV2_2);
+		JLabel p4 = new JLabel();
+		ImageIcon p4img = new ImageIcon(getClass().getResource("/p/6.png"));
+		Image p4im = p4img.getImage();
+		p4im = p4im.getScaledInstance(40, 60, java.awt.Image.SCALE_SMOOTH);
+		p4.setIcon(new ImageIcon(p4im));
+		Carrfour.secondPage.add(p4);
+		p4.setBounds(1120, 540, 40, 60);
 
-		feuV1_1.setBackground(new Color(0, 100, 0));
-		feuV1_2.setBackground(new Color(0, 100, 0));
-		feuV2_1.setBackground(new Color(255, 0, 0));
-		feuV2_2.setBackground(new Color(255, 0, 0));
+		JLabel p2 = new JLabel();
+		ImageIcon p2img = new ImageIcon(getClass().getResource("/p/4.png"));
+		Image p2im = p2img.getImage();
+		p2im = p2im.getScaledInstance(40, 25, java.awt.Image.SCALE_SMOOTH);
+		p2.setIcon(new ImageIcon(p2im));
+		Carrfour.secondPage.add(p2);
+		p2.setBounds(220, 640, 40, 25);
 
-		JPanel panel_4 = new JPanel();
-		panel_4.setBounds(0, 0, 175, 250);
-		frmCarrfour.getContentPane().add(panel_4);
-		panel_4.setBackground(Color.GREEN);
+		JLabel p3 = new JLabel();
+		ImageIcon p3img = new ImageIcon(getClass().getResource("/p/7.png"));
+		Image p3im = p3img.getImage();
+		p3im = p3im.getScaledInstance(30, 30, java.awt.Image.SCALE_SMOOTH);
+		p3.setIcon(new ImageIcon(p3im));
+		Carrfour.secondPage.add(p3);
+		p3.setBounds(520, 100, 30, 30);
 
-		JPanel panel_5 = new JPanel();
-		panel_5.setBounds(175, 0, 165, 190);
-		frmCarrfour.getContentPane().add(panel_5);
-		panel_5.setBackground(Color.GREEN);
+		frmCarrfour.pack();
+		frmCarrfour.setVisible(true);
+	}
 
-		JPanel panel_1_1 = new JPanel();
-		panel_1_1.setLayout(null);
-		panel_1_1.setBackground(Color.GREEN);
-		panel_1_1.setBounds(0, 440, 175, 250);
-		frmCarrfour.getContentPane().add(panel_1_1);
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == btnStart) {
+			card.show(layeredPane, "Carrefour");
+			startCir();
+		}
+	}
 
-		JPanel panel_1_2 = new JPanel();
-		panel_1_2.setLayout(null);
-		panel_1_2.setBackground(Color.GREEN);
-		panel_1_2.setBounds(175, 500, 165, 190);
-		frmCarrfour.getContentPane().add(panel_1_2);
+	public static void startCir() {
+		try {
+			Semaphore sfeu1r = new Semaphore(1, true), sfeu2r = new Semaphore(0, true),
+					sfeu1l = new Semaphore(1, true), sfeu2l = new Semaphore(0, true), 
+					busStationL = new Semaphore(1, true), busStationR = new Semaphore(1, true);
+
+			int coordonneesVoie1[] = { -150, -60, 30, 120, 210, 300, 390, 480, 570, 845, 935, 1025, 1115, 1205, 1295, 1385 },
+				coordonneesVoie2[] = { -110, -20, 70, 160, 440, 530, 620, 710 };
+
+			int[][] coordonnees = { coordonneesVoie1, coordonneesVoie2 };
+
+			String type[] = { "car", "car", "car", "bus", "bus" };
+
+			ArrayList<Semaphore> svoie1L = new ArrayList<Semaphore>();
+			ArrayList<Semaphore> svoie2L = new ArrayList<Semaphore>();
+			ArrayList<Semaphore> svoie1R = new ArrayList<Semaphore>();
+			ArrayList<Semaphore> svoie2R = new ArrayList<Semaphore>();
+			ArrayList<Semaphore> crossroads = new ArrayList<Semaphore>();
+			ArrayList<Semaphore> busStation = new ArrayList<Semaphore>();
+
+			Semaphore v1 = new Semaphore(1, true);
+			Semaphore v2 = new Semaphore(1, true);
+			Semaphore v3 = new Semaphore(1, true);
+			Semaphore v4 = new Semaphore(1, true);
+
+			Semaphore waitBusl = new Semaphore(0, true), waitBusr = new Semaphore(0, true);
+
+			busStation.add(busStationL);
+			busStation.add(busStationR);
+
+			ArrayList<ArrayList<Semaphore>> semaphores = new ArrayList<ArrayList<Semaphore>>();
+			semaphores.add(svoie1L);
+			semaphores.add(svoie2L);
+			semaphores.add(svoie1R);
+			semaphores.add(svoie2R);
+			semaphores.add(busStation);
+			semaphores.add(crossroads);
+
+			for (int i = 0; i < 4; i++) {
+				crossroads.add(new Semaphore(1, true));
+			}
+			for (int i = 0; i < coordonneesVoie1.length; i++) {
+				svoie1L.add(new Semaphore(1, true));
+				svoie1R.add(new Semaphore(1, true));
+			}
+			for (int i = 0; i < coordonneesVoie2.length; i++) {
+				svoie2L.add(new Semaphore(1, true));
+				svoie2R.add(new Semaphore(1, true));
+			}
+
+			ChangementFeu ch = new ChangementFeu(sfeu1r, sfeu2r, sfeu1l, sfeu2l);
+			ch.start();
+
+			int nb_v1r = (new Random()).nextInt(20);
+			System.out.println(nb_v1r);
+			for (int i = 0; i < nb_v1r; i++) {
+				Voie1R v1r = new Voie1R(sfeu1r, semaphores, coordonnees, type[(new Random()).nextInt(5)], waitBusl);
+				v1r.start();
+			}
+
+			int nb_v1l = (new Random()).nextInt(20);
+			System.out.println(nb_v1l);
+			for (int i = 0; i < nb_v1l; i++) {
+				Voie1L v1l = new Voie1L(sfeu1l, semaphores, coordonnees, type[(new Random()).nextInt(5)], waitBusr);
+				v1l.start();
+			}
+
+			int nb_v2l = (new Random()).nextInt(20);
+			System.out.println(nb_v2l);
+			for (int i = 0; i < nb_v2l; i++) {
+				Voie2L v2l = new Voie2L(sfeu2l, semaphores, coordonnees, type[(new Random()).nextInt(5)], waitBusl);
+				v2l.start();
+			}
+
+			int nb_v2r = (new Random()).nextInt(20);
+			System.out.println(nb_v2r);
+			for (int i = 0; i < nb_v2r; i++) {
+				Voie2R v2r = new Voie2R(sfeu2r, semaphores, coordonnees, type[(new Random()).nextInt(5)], waitBusl);
+				v2r.start();
+			}
+
+			int nb_p1r = (new Random()).nextInt(10);
+			System.out.println(nb_p1r);
+			for (int i = 0; i < nb_p1r; i++) {
+				personne1r p1r = new personne1r(waitBusr, v3);
+				p1r.start();
+			}
+
+			int nb_p1l = (new Random()).nextInt(10);
+			System.out.println(nb_p1l);
+			for (int i = 0; i < nb_p1l; i++) {
+				personne1l p1l = new personne1l(waitBusl, v1);
+				p1l.start();
+			}
+
+			int nb_p1l2r = (new Random()).nextInt(10);
+			System.out.println(nb_p1l2r);
+			for (int i = 0; i < nb_p1l2r; i++) {
+				personne1l2r p1l2r = new personne1l2r(v2);
+				p1l2r.start();
+			}
+			int nb_p1l2l = (new Random()).nextInt(10);
+			System.out.println(nb_p1l2l);
+			for (int i = 0; i < nb_p1l2l; i++) {
+				personne1l2l p1l2l = new personne1l2l(v4);
+				p1l2l.start();
+			}
+		} catch (Exception e) {
+		}
 	}
 }

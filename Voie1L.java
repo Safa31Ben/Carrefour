@@ -1,21 +1,44 @@
+import java.awt.Image;
+
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-import javax.swing.JButton;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
 
 public class Voie1L extends Thread {
-	private Semaphore sfeu1, arret;
-	private ArrayList<Semaphore> svoie1;
-	private int i, coordonneesVoie1[];
+	
+	private Semaphore sfeu1, waitBusr;
+	private ArrayList<ArrayList<Semaphore>> semaphores;
+	private int i, coordonnees[][], imagein;
 	private String type;
+	private String direction[] = { "voie1R", "voie2L", "voie2R" };
+	private String myDirection;
+	private String V1lCar[] = { "/V1L/V1 L p.png", "/V1L/V1L R.png", "/V1L/V1L Taxi.png", "/V1L/V1L W.png", "/V1L/V1L Y.png" },
+			V2lCar[] = { "/V2L/V2 L p.png", "/V2L/V2L R.png", "/V2L/V2L Taxi.png", "/V2L/V2L W.png", "/V2L/V2L Y.png" },
+			V2rCar[] = { "/V2R/V2 R p.png", "/V2R/V2R R.png", "/V2R/V2R Taxi.png", "/V2R/V2R W.png", "/V2R/V2R Y.png" };
+	private String V1lBus[] = { "/V1L/V1 L bus .png", "/V1L/V1 L rBus.png" },
+			V2lBus[] = { "/V2L/V2 L Bus.png", "/V2L/V2 L rBus.png" },
+			V2rBus[] = { "/V2R/V2 R Bus.png", "/V2R/V2 R rBus.png" };
 
-	public Voie1L(Semaphore sfeu1, ArrayList<Semaphore> svoie1, int coordonneesVoie1[], String type, Semaphore arret) {
+	public Voie1L(Semaphore sfeu1, ArrayList<ArrayList<Semaphore>> semaphores, int[][] coordonnees, String type, Semaphore waitBusr) {
 		this.sfeu1 = sfeu1;
-		this.svoie1 = svoie1;
-		this.coordonneesVoie1 = coordonneesVoie1;
-		this.i = 0;
+		this.waitBusr = waitBusr;
+		this.semaphores = semaphores;
+		this.coordonnees = coordonnees;
 		this.type = type;
-		this.arret = arret;
+		this.i = 0;
+		this.myDirection = direction[new Random().nextInt(direction.length)];
+		switch (this.type) {
+		case "car":
+			this.imagein = new Random().nextInt(V1lCar.length);
+			break;
+		case "bus":
+			this.imagein = new Random().nextInt(V1lBus.length);
+			break;
+		}
 	}
 
 	public void run() {
@@ -26,31 +49,37 @@ public class Voie1L extends Thread {
 	}
 
 	private void traversee1() throws InterruptedException {
-		int x = coordonneesVoie1[i], y = 380, w = 50, h = 40;
-		JButton voiture = new JButton();
-		Carrfour.frmCarrfour.getContentPane().add(voiture);
-		(svoie1.get(i)).acquire();
+		int x = coordonnees[0][i], y = 380, w = 65, h = 40;
+		JLabel voiture = new JLabel();
+		ImageIcon voitureimg;
+		Image im;
+		sleep((new Random()).nextInt(60000));
+		semaphores.get(0).get(i).acquire(); // pour tester si partie i de voie 1 de gauche est libre
 		switch (type) {
 		case "bus":
-			w = 65;
-			voiture.setBounds(x, y, w, h);
-			while (coordonneesVoie1[i] != 210) {
-				while (x < coordonneesVoie1[i]) {
+			w = 75;
+			voitureimg = new ImageIcon(getClass().getResource(V1lBus[imagein]));
+			im = voitureimg.getImage();
+			im = im.getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH);
+			voiture.setIcon(new ImageIcon(im));
+			Carrfour.secondPage.add(voiture);
+			while (coordonnees[0][i] != 210) {
+				while (x < coordonnees[0][i]) {
 					sleep(10);
 					voiture.setBounds(x++, y, w, h);
 				}
 				if (x == 120)
-					arret.acquire();
-				svoie1.get(i + 1).acquire();
-				svoie1.get(i).release();
+					semaphores.get(4).get(0).acquire(); // pour tester si l'arret est libre
+				semaphores.get(0).get(i + 1).acquire(); // pour tester si partie i+1 de voie 1 de gauche s'il est libre
+				semaphores.get(0).get(i).release();
 				i++;
 			}
 			for (int j = 0; j < 35; j++) {
 				sleep(10);
 				voiture.setBounds(x++, y, w, h);
 			}
-			svoie1.get(i).release();
-			for (int j = 0; j < 65; j++) {
+			semaphores.get(0).get(i).release();
+			for (int j = 0; j < 60; j++) {
 				sleep(10);
 				voiture.setBounds(x++, y++, w, h);
 			}
@@ -58,59 +87,170 @@ public class Voie1L extends Thread {
 				sleep(10);
 				voiture.setBounds(x++, y, w, h);
 			}
-			sleep(2500);
+			if (waitBusr.getQueueLength() < 2) {
+				waitBusr.release(waitBusr.getQueueLength());
+			} else if (waitBusr.getQueueLength() == 0) {
+			} else {
+				waitBusr.release(2);
+			}
+			sleep(3000);
 			i++;
-			svoie1.get(i).acquire();
+			semaphores.get(0).get(i).acquire(); // pour tester si partie i de voie 1 de gauche est libre
 			for (int j = 0; j < 65; j++) {
 				sleep(10);
 				voiture.setBounds(x++, y--, w, h);
 			}
-			arret.release();
-			while (coordonneesVoie1[i] != 845) {
-				while (x < coordonneesVoie1[i]) {
+			semaphores.get(4).get(0).release();
+			while (coordonnees[0][i] != 845) {
+				while (x < coordonnees[0][i]) {
 					sleep(10);
 					voiture.setBounds(x++, y, w, h);
 				}
 				if (x == 570)
-					sfeu1.acquire();
-				else
-					svoie1.get(i + 1).acquire();
-				svoie1.get(i).release();
+					sfeu1.acquire(); // pour tester le si feu de voie 1 est vert
+				else {
+					semaphores.get(0).get(i + 1).acquire(); // pour tester si partie i+1 de voie 1 de gauche est libre
+					semaphores.get(0).get(i).release();
+				}
 				i++;
 			}
 			break;
-		case "voiture":
-			voiture.setBounds(x, y, w, h);
-			while (coordonneesVoie1[i] != 845) {
-				while (x < coordonneesVoie1[i]) {
+		case "car":
+			voitureimg = new ImageIcon(getClass().getResource(V1lCar[imagein]));
+			im = voitureimg.getImage();
+			im = im.getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH);
+			voiture.setIcon(new ImageIcon(im));
+			Carrfour.secondPage.add(voiture);
+			while (coordonnees[0][i] != 845) {
+				while (x < coordonnees[0][i]) {
 					sleep(10);
 					voiture.setBounds(x++, y, w, h);
 				}
 				if (x == 570)
-					sfeu1.acquire();
-				else
-					svoie1.get(i + 1).acquire();
-				svoie1.get(i).release();
+					sfeu1.acquire(); // pour tester le si feu de voie 1 est vert
+				else {
+					semaphores.get(0).get(i + 1).acquire(); // pour tester si partie i+1 de voie 1 de gauche est libre
+					semaphores.get(0).get(i).release();
+				}
 				i++;
 			}
 			break;
 		}
-
-		while (x <= coordonneesVoie1[i]) {
-			sleep(10);
-			voiture.setBounds(x++, y, w, h);
-		}
-		i++;
-		sfeu1.release();
-		while (i != coordonneesVoie1.length) {
-			while (x < coordonneesVoie1[i]) {
+		switch (myDirection) {
+		case "voie1R":
+			semaphores.get(5).get(0).acquire(); // pour assurer que il n'y a pas une véhicule circule dans le carrefour devant le voie 1
+			i--;
+			semaphores.get(0).get(i).release();
+			i++;
+			while (x <= coordonnees[0][i]) {
 				sleep(10);
 				voiture.setBounds(x++, y, w, h);
 			}
-			if ((i + 1) != coordonneesVoie1.length)
-				svoie1.get(i + 1).acquire();
-			svoie1.get(i).release();
 			i++;
+			semaphores.get(5).get(0).release();
+			sfeu1.release();
+			while (i != coordonnees[0].length) {
+				while (x < coordonnees[0][i]) {
+					sleep(10);
+					voiture.setBounds(x++, y, w, h);
+				}
+				if ((i + 1) != coordonnees[0].length)
+					semaphores.get(0).get(i + 1).acquire(); // pour tester si partie i+1 de voie 1 de gauche est libre
+				semaphores.get(0).get(i).release();
+				i++;
+			}
+			break;
+		case "voie2L":
+			semaphores.get(5).get(0).acquire(); // pour assurer que il n'y a pas une véhicule circule dans le carrefour devant le voie 1
+			semaphores.get(5).get(2).acquire(); // pour assurer que il n'y a pas une véhicule circule dans le carrefour devant le voie 2
+			i--;
+			semaphores.get(0).get(i).release();
+			while (x <= 770) {
+				sleep(10);
+				voiture.setBounds(x++, y, w, h);
+			}
+			while (x <= 785) {
+				sleep(10);
+				voiture.setBounds(x++, y--, w, h);
+			}
+			i = 3;
+			switch (type) {
+			case "bus":
+				voitureimg = new ImageIcon(getClass().getResource(V2rBus[imagein]));
+				im = voitureimg.getImage();
+				im = im.getScaledInstance(h, w, java.awt.Image.SCALE_SMOOTH);
+				voiture.setIcon(new ImageIcon(im));
+				Carrfour.secondPage.add(voiture);
+				break;
+			case "car":
+				voitureimg = new ImageIcon(getClass().getResource(V2rCar[imagein]));
+				im = voitureimg.getImage();
+				im = im.getScaledInstance(h, w, java.awt.Image.SCALE_SMOOTH);
+				voiture.setIcon(new ImageIcon(im));
+				Carrfour.secondPage.add(voiture);
+				break;
+			}
+			while (y > coordonnees[1][i]) {
+				sleep(10);
+				voiture.setBounds(x, y--, h, w);
+			}
+			i--;
+			semaphores.get(5).get(0).release();
+			semaphores.get(5).get(2).release();
+			sfeu1.release();
+			while (i != -1) {
+				while (y > coordonnees[1][i]) {
+					sleep(10);
+					voiture.setBounds(x, y--, h, w);
+				}
+				if ((i - 1) != -1)
+					semaphores.get(3).get(i - 1).acquire(); // pour tester si partie i-1 de voie 2 de haut est libre
+				semaphores.get(3).get(i).release();
+				i--;
+			}
+			break;
+		case "voie2R":
+			semaphores.get(5).get(0).acquire(); // pour assurer que il n'y a pas une véhiculé circule dans le carrefour devant le voie 1
+			i--;
+			semaphores.get(0).get(i).release();
+			while (x <= 665) {
+				sleep(10);
+				voiture.setBounds(x++, y, w, h);
+			}
+			while (x <= 680) {
+				sleep(10);
+				voiture.setBounds(x++, y++, w, h);
+			}
+			i = 4;
+			switch (type) {
+			case "bus":
+				voitureimg = new ImageIcon(getClass().getResource(V2lBus[imagein]));
+				im = voitureimg.getImage();
+				im = im.getScaledInstance(h, w, java.awt.Image.SCALE_SMOOTH);
+				voiture.setIcon(new ImageIcon(im));
+				Carrfour.secondPage.add(voiture);
+				break;
+			case "car":
+				voitureimg = new ImageIcon(getClass().getResource(V2lCar[imagein]));
+				im = voitureimg.getImage();
+				im = im.getScaledInstance(h, w, java.awt.Image.SCALE_SMOOTH);
+				voiture.setIcon(new ImageIcon(im));
+				Carrfour.secondPage.add(voiture);
+				break;
+			}
+			semaphores.get(5).get(0).release();
+			sfeu1.release();
+			while (i != coordonnees[1].length) {
+				while (y < coordonnees[1][i]) {
+					sleep(10);
+					voiture.setBounds(x, y++, h, w);
+				}
+				if ((i + 1) != coordonnees[1].length)
+					semaphores.get(1).get(i + 1).acquire(); // pour tester si partie i+1 de voie 2 de haut est libre
+				semaphores.get(1).get(i).release();
+				i++;
+			}
+			break;
 		}
 	}
 }
